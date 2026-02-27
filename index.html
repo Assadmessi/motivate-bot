@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Daily Motivation Bot</title>
+</head>
+<body>
+    <main class="app">
+        <h1>Daily Motivation Bot</h1>
+
+        <label>
+            Your name
+            <input type="text" name="name" id="nameInput" placeholder="Enter your name">
+        </label>
+
+        <label>
+            Your mood
+            <select id="moodSelect">
+                <option value="">Select mood...</option>
+                <option value="sad">Sad</option>
+                <option value="happy">Happy</option>
+                <option value="tired">Tired</option>
+                <option value="stress">Stress</option>
+            </select>
+        </label>
+
+        <div class="actions">
+            <button id="getBtn" type="button">Get Motivation</button>
+            <button id="resetBtn" type="button">Reset</button>
+        </div>
+
+        <section class="output">
+            <h2>Bot says:</h2>
+            <p id="messageOutput">Your message will appear here</p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
