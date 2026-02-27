@@ -40,20 +40,27 @@ export default {
       return new Response(null, { headers: corsHeaders("*") });
     }
 
-    // Helpful GET check so it doesn't look blank
+    // Quick GET check so browser doesn't look blank
     if (request.method === "GET" && url.pathname === "/api/motivate") {
-      return json({ ok: true, hint: "POST JSON {name, mood}" }, 200, corsHeaders("*"));
+      return json({ ok: true, hint: "POST JSON {name, mood} to /api/motivate" }, 200, corsHeaders("*"));
     }
 
-    if (url.pathname !== "/api/motivate" || request.method !== "POST") {
+    // Route
+    if (url.pathname !== "/api/motivate") {
       return json({ error: "Not found" }, 404, corsHeaders("*"));
     }
 
+    if (request.method !== "POST") {
+      return json({ error: "Method not allowed" }, 405, corsHeaders("*"));
+    }
+
+    // Daily cap (prevents burning free AI)
     const cap = await checkDailyCap();
     if (!cap.ok) {
       return json({ error: "Daily AI limit reached. Try again tomorrow." }, 429, corsHeaders("*"));
     }
 
+    // Parse JSON
     let body;
     try {
       body = await request.json();
@@ -70,11 +77,13 @@ export default {
     const allowedMoods = new Set(["happy", "sad", "tired", "stressed"]);
     if (!allowedMoods.has(mood)) return json({ error: "Invalid mood." }, 400, corsHeaders("*"));
 
+    // Short prompt saves quota
     const prompt =
       `Write a short, kind, practical motivational message (1-2 sentences max). ` +
       `No quotes, no markdown. Name: ${name}. Mood: ${mood}.`;
 
     try {
+      // Requires Workers AI binding named AI
       const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
         messages: [{ role: "user", content: prompt }],
       });
@@ -84,7 +93,8 @@ export default {
 
       return json({ message }, 200, corsHeaders("*"));
     } catch (err) {
-      return json({ error: "AI limit reached for today. Try again tomorrow." }, 429, corsHeaders("*"));
+      // If binding missing or quota exceeded, treat as "try tomorrow"
+      return json({ error: "AI limit reached for today (or AI not enabled). Try again tomorrow." }, 429, corsHeaders("*"));
     }
   },
 };
