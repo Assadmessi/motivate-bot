@@ -1,32 +1,110 @@
+function cors() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "86400",
+  };
+}
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: { "Content-Type": "application/json; charset=utf-8", ...cors() },
   });
+}
+
+const DAILY_REQUEST_CAP = 300;
+
+async function checkDailyCap() {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = new Request(`https://cap.local/${today}`);
+
+  const cache = caches.default;
+  const cached = await cache.match(key);
+  const count = cached ? Number(await cached.text()) : 0;
+
+  if (count >= DAILY_REQUEST_CAP) return { ok: false, count };
+
+  const next = count + 1;
+  await cache.put(key, new Response(String(next), { headers: { "Cache-Control": "max-age=86400" } }));
+  return { ok: true, count: next };
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    // Preflight
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: cors() });
+    }
+
+    // Home
+    if (request.method === "GET" && url.pathname === "/") {
+      return new Response(
+        `<!doctype html><html><body style="font-family:Arial;padding:24px">
+        <h1>Motivation Bot API ✅</h1>
+        <p>Use <code>POST /api/motivate</code> with JSON {"name","mood"}.</p>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html; charset=utf-8" } }
+      );
+    }
+
+    // GET check
     if (request.method === "GET" && url.pathname === "/api/motivate") {
       return json({ ok: true, hint: "POST JSON {name, mood} to /api/motivate" });
     }
 
-    if (url.pathname !== "/api/motivate" || request.method !== "POST") {
-      return new Response(null, { status: 404 });
+    // Route
+    if (url.pathname !== "/api/motivate") {
+      return json({ error: "Not found" }, 404);
     }
 
-    const { name, mood } = await request.json();
-    if (!name || !mood) return json({ error: "Missing name or mood" }, 400);
+    if (request.method !== "POST") {
+      return json({ error: "Method not allowed" }, 405);
+    }
 
-    const prompt = `Write 1-2 short kind motivational sentences for ${name} who feels ${mood}. No quotes, no markdown.`;
+    // Daily cap
+    const cap = await checkDailyCap();
+    if (!cap.ok) {
+      return json({ error: "Daily AI limit reached. Try again tomorrow." }, 429);
+    }
 
-    // This requires the AI binding to exist as env.AI
-    const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
-      messages: [{ role: "user", content: prompt }],
-    });
+    // Binding guard
+    if (!env.AI) {
+      return json({ error: "AI binding missing on this Worker." }, 503);
+    }
 
-    return json({ message: result.response });
+    // Parse JSON
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: "Invalid JSON" }, 400);
+    }
+
+    const name = String(body?.name || "").trim().slice(0, 40);
+    const mood = String(body?.mood || "").trim().toLowerCase();
+
+    if (!name) return json({ error: "Please enter your name." }, 400);
+
+    const allowed = new Set(["happy", "sad", "tired", "stressed"]);
+    if (!allowed.has(mood)) return json({ error: "Invalid mood." }, 400);
+
+    const prompt = `Write a short, kind, practical motivational message (1-2 sentences max). No quotes, no markdown. Name: ${name}. Mood: ${mood}.`;
+
+    try {
+      const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        messages: [{ role: "user", content: prompt }],
+      });
+
+      const message = String(result?.response || "").trim();
+      if (!message) return json({ error: "AI returned empty response." }, 502);
+
+      return json({ message });
+    } catch (e) {
+      return json({ error: "AI failed (quota/service). Try again tomorrow." }, 429);
+    }
   },
 };
