@@ -86,13 +86,21 @@ export default {
 
     const name = String(body?.name || "").trim().slice(0, 40);
     const mood = String(body?.mood || "").trim().toLowerCase();
+    const language = String(body?.language || "en").trim().toLowerCase() === "my" ? "my" : "en";
 
     if (!name) return json({ error: "Please enter your name." }, 400);
 
     const allowed = new Set(["happy", "sad", "tired", "stressed"]);
     if (!allowed.has(mood)) return json({ error: "Invalid mood." }, 400);
 
-    const prompt = `Write a short, kind, practical motivational message (1-2 sentences max). No quotes, no markdown. Name: ${name}. Mood: ${mood}.`;
+    const moodLabels = {
+      en: { happy: "happy", sad: "sad", tired: "tired", stressed: "stressed" },
+      my: { happy: "ပျော်ရွှင်", sad: "ဝမ်းနည်း", tired: "ပင်ပန်း", stressed: "စိတ်ဖိစီး" },
+    };
+
+    const prompt = language === "my"
+      ? `မြန်မာဘာသာနဲ့ပဲ တိုတိုရှင်းရှင်း၊ နူးညံ့ပြီး လက်တွေ့ကျတဲ့ စိတ်ခွန်အားပေး စာတို ၁ ပိုဒ် သို့မဟုတ် ၂ ပိုဒ်အထိ ရေးပါ။ markdown မသုံးပါနဲ့။ quote မထည့်ပါနဲ့။ အင်္ဂလိပ်မရေးပါနဲ့။ အသုံးအနှုန်းက သဘာဝကျပြီး နားလည်လွယ်ရမယ်။ နာမည် - ${name}။ စိတ်အခြေအနေ - ${moodLabels.my[mood]}။` 
+      : `Write a short, kind, practical motivational message (1-2 sentences max). No quotes, no markdown. Name: ${name}. Mood: ${moodLabels.en[mood]}.`;
 
     try {
       const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
@@ -102,7 +110,14 @@ export default {
       const message = String(result?.response || "").trim();
       if (!message) return json({ error: "AI returned empty response." }, 502);
 
-      return json({ message });
+      const cleanedMessage = language === "my"
+        ? message
+            .replace(/[​-‍﻿]/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+        : message;
+
+      return json({ message: cleanedMessage, language });
     } catch (e) {
       return json({ error: "AI failed (quota/service). Try again tomorrow." }, 429);
     }
