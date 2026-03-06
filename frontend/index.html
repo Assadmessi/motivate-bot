@@ -8,21 +8,31 @@
 </head>
 <body>
     <main class="app">
-        <h1>Daily Motivation Bot</h1>
+        <div class="topbar">
+            <h1 id="appTitle">Daily Motivation Bot</h1>
+
+            <label class="lang-switch" for="languageSelect">
+                <span id="languageLabel">Language</span>
+                <select id="languageSelect" aria-label="Language switcher">
+                    <option value="en">English</option>
+                    <option value="my">မြန်မာ</option>
+                </select>
+            </label>
+        </div>
 
         <label>
-            Your name
+            <span id="nameLabel">Your name</span>
             <input type="text" name="name" id="nameInput" placeholder="Enter your name">
         </label>
 
         <label>
-            Your mood
+            <span id="moodLabel">Your mood</span>
             <select id="moodSelect">
-                <option value="">Select mood...</option>
-                <option value="sad">Sad</option>
-                <option value="happy">Happy</option>
-                <option value="tired">Tired</option>
-                <option value="stress">Stress</option>
+                <option value="" id="moodPlaceholder">Select mood...</option>
+                <option value="sad" data-i18n="moodSad">Sad</option>
+                <option value="happy" data-i18n="moodHappy">Happy</option>
+                <option value="tired" data-i18n="moodTired">Tired</option>
+                <option value="stressed" data-i18n="moodStressed">Stressed</option>
             </select>
         </label>
 
@@ -32,7 +42,7 @@
         </div>
 
         <section class="output">
-            <h2>Bot says:</h2>
+            <h2 id="botSaysTitle">Bot says:</h2>
             <p id="messageOutput">Your message will appear here</p>
         </section>
     </main>
