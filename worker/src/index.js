@@ -84,7 +84,8 @@ function buildMessages({ name, mood, language, moodLabels }) {
           "ဝါကျတည်ဆောက်ပုံက ရိုးရိုးရှင်းရှင်း၊ နွေးနွေးထွေးထွေး၊ ဖတ်လိုက်တာနဲ့ အဓိပ္ပာယ်တန်းဝင်ရမယ်။ မသုံးနေကျ စကားလုံး၊ ကြမ်းတမ်းတဲ့ စကား၊ တရားဟောသလို tone မသုံးပါနဲ့။ " +
           "မင်း၊ ဒီနေ့၊ အခု၊ ခဏနား၊ ဖြည်းဖြည်း၊ ဆက်သွားလို ရိုးရိုးသဘာဝ စကားလုံးတွေကို ပိုသုံးနိုင်တယ်။ သင်၊ သင့်၊ အောင်မြင်မှု၊ ယုံကြည်ပါ၊ ကြိုးစားပါလို စာအုပ်ဆန်တဲ့ အသုံးအနှုန်းတွေကို မသုံးပါနဲ့။ UI က နာမည်ကို အလိုအလျောက်ထည့်ပြီးသားဖြစ်လို့ နာမည်ကို လုံးဝ မထည့်ပါနဲ့။ နှုတ်ဆက်စကားနဲ့ မစပါနဲ့။ " +
           "အင်္ဂလိပ်စာ၊ markdown၊ bullet point၊ quote၊ emoji မသုံးပါနဲ့။ " +
-          "စာကြောင်း ၁ ကြောင်း သို့မဟုတ် ၂ ကြောင်းပဲ ရေးပါ။ မရှုပ်ဘဲ ဖတ်လိုက်တာနဲ့ အားပေးသံ ထိရမယ်။ " +
+          "စာကြောင်းတစ်ကြောင်းတည်း သို့မဟုတ် ပြီးပြည့်စုံတဲ့ စာကြောင်း ၂ ကြောင်းပဲ ရေးပါ။ ဝါကျတစ်ခုချင်းစီက အဆုံးသတ်ပြည့်စုံရမယ်။ စကားလက်စမကျန်ရဘူး။ " +
+          "ပထမစာကြောင်းက နားလည်ပေးသလို သို့မဟုတ် လိုက်ဖက်တဲ့ mood ကို ထိစေပြီး၊ နောက်စာကြောင်းရှိရင် ဖြည်းဖြည်းအားပေးတဲ့ပုံစံနဲ့ အဆုံးသတ်ပါ။ " +
           "အဓိကက အောက်က ဥပမာတွေရဲ့ mood flow နဲ့ နီးရမယ်။ weird flow၊ translated flow၊ formal ဆန်တဲ့ flow မဖြစ်ရပါ။",
       },
       {
@@ -94,7 +95,7 @@ function buildMessages({ name, mood, language, moodLabels }) {
           `စိတ်အခြေအနေ - ${moodLabels.my[mood]}\n` +
           `${moodGuide[mood]?.my || ""}\n` +
           `ဒီ mood အတွက် သဘာဝကျတဲ့ ဥပမာ style ၂ ခု -\n${myanmarExamples[mood].map((x, i) => `${i + 1}. ${x}`).join("\n")}\n` +
-          "အပေါ်ကဥပမာတွေကို စာလုံးတိတိမကူးဘဲ mood flow တူ၊ အားပေးသံတူ၊ sentence building တူတဲ့ မြန်မာ motivation message အသစ်တစ်ခု ရေးပါ။ သူငယ်ချင်းတစ်ယောက်က ရိုးရိုးပြောသလို ဖြစ်ရမယ်။ ဖတ်ရခက်တဲ့ စကားလုံး၊ formal ဆန်တဲ့ အသုံးအနှုန်း၊ ဘာသာပြန်နံ့ထွက်တဲ့ ဝါကျပုံစံ မသုံးပါနဲ့။ flow မကွာသွားပါနဲ့။",
+          "အပေါ်ကဥပမာတွေကို စာလုံးတိတိမကူးဘဲ mood flow တူ၊ အားပေးသံတူ၊ sentence building တူတဲ့ မြန်မာ motivation message အသစ်တစ်ခု ရေးပါ။ သူငယ်ချင်းတစ်ယောက်က ရိုးရိုးပြောသလို ဖြစ်ရမယ်။ ဖတ်ရခက်တဲ့ စကားလုံး၊ formal ဆန်တဲ့ အသုံးအနှုန်း၊ ဘာသာပြန်နံ့ထွက်တဲ့ ဝါကျပုံစံ မသုံးပါနဲ့။ flow မကွာသွားပါနဲ့။ စာကို တိတိကျကျ အဆုံးသတ်ပြီး နောက်ဆုံးမှာ ။ ပါစေ။",
       },
     ];
   }
@@ -116,6 +117,58 @@ function buildMessages({ name, mood, language, moodLabels }) {
         "Write one short, kind, practical motivational message that fits this mood.",
     },
   ];
+}
+
+
+function trimToCompleteMyanmarSentences(message) {
+  const text = String(message || "").trim();
+  if (!text) return "";
+
+  const complete = text.match(/[^။!?]+[။!?]/g) || [];
+  if (complete.length) {
+    return complete
+      .slice(0, 2)
+      .map((part) => part.trim())
+      .join(" ")
+      .trim();
+  }
+
+  if (/[က-႟)]$/.test(text) && !/[၊,:;\-–—…]$/.test(text)) {
+    return `${text}။`;
+  }
+
+  return text;
+}
+
+function looksIncompleteMyanmarMessage(message) {
+  const text = String(message || "").trim();
+  if (!text) return true;
+
+  if (/[…]|[၊,:;\-–—]$/.test(text)) return true;
+
+  const incompleteEndings = [
+    "ပြီး",
+    "လို့",
+    "ဆိုတော့",
+    "ဒါပေမယ့်",
+    "ပေမယ့်",
+    "မဟုတ်ဘဲ",
+    "ဖြစ်ပြီး",
+    "ဖြစ်တာ",
+    "လုပ်ပြီး",
+    "နေလို့",
+    "နေတဲ့",
+    "နေတုန်း",
+    "တဲ့",
+    "သော",
+  ];
+
+  if (incompleteEndings.some((ending) => text.endsWith(ending))) return true;
+
+  const completeSentenceCount = (text.match(/[။!?]/g) || []).length;
+  if (completeSentenceCount === 0 && text.length < 20) return true;
+
+  return false;
 }
 
 function cleanMyanmarMessage(message) {
@@ -242,8 +295,10 @@ export default {
       const message = String(result?.response || "").trim();
       if (!message) return json({ error: "AI returned empty response." }, 502);
 
-      const cleanedMessage = language === "my" ? cleanMyanmarMessage(message) : message.trim();
-      const finalMessage = language === "my" && isWeakMyanmarMessage(cleanedMessage)
+      const cleanedMessage = language === "my"
+        ? trimToCompleteMyanmarSentences(cleanMyanmarMessage(message))
+        : message.trim();
+      const finalMessage = language === "my" && (isWeakMyanmarMessage(cleanedMessage) || looksIncompleteMyanmarMessage(cleanedMessage))
         ? getNaturalMyanmarFallback(mood)
         : cleanedMessage;
 
